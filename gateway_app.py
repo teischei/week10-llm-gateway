@@ -19,7 +19,7 @@ import litellm
 
 EASY_MODEL = os.getenv("EASY_MODEL", "ollama/llama3.2:3b")
 HARD_MODEL = os.getenv("HARD_MODEL", "ollama/llama3.1:8b")
-FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", HARD_MODEL)
+FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", "ollama/llama3.2:1b")
 MODEL_TIMEOUT_SECONDS = int(os.getenv("MODEL_TIMEOUT_SECONDS", "60"))
 
 

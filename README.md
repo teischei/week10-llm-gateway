@@ -1,7 +1,6 @@
-# Starter — LLM Gateway & Routing
+# LLM Gateway and Routing
 
-A skeleton with two LLM tasks (easy: sentiment, hard: bug-explanation) routed through one
-`call_model` choke point via **LiteLLM**. You fill in the routing and fallback.
+This project routes easy sentiment tasks and harder bug explanation tasks through one LiteLLM gateway function.
 
 ## Setup
 ```bash
@@ -10,6 +9,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ollama pull llama3.2:3b
 ollama pull llama3.1:8b
+ollama pull llama3.2:1b
 python gateway_app.py
 ```
 
@@ -20,7 +20,7 @@ The `.env` file is ignored by Git if you later choose to use a hosted provider.
 
 - `EASY_MODEL` defaults to `ollama/llama3.2:3b` for sentiment classification.
 - `HARD_MODEL` defaults to `ollama/llama3.1:8b` for bug explanations.
-- `FALLBACK_MODEL` defaults to the hard model when the primary request fails or times out.
+- `FALLBACK_MODEL` defaults to `ollama/llama3.2:1b` when a primary request fails or times out.
 - `MODEL_TIMEOUT_SECONDS` defaults to 60.
 
 You can override any model without editing the source.
@@ -28,7 +28,7 @@ You can override any model without editing the source.
 ```bash
 export EASY_MODEL=ollama/llama3.2:3b
 export HARD_MODEL=ollama/llama3.1:8b
-export FALLBACK_MODEL=ollama/llama3.1:8b
+export FALLBACK_MODEL=ollama/llama3.2:1b
 ```
 
 ## Measurement
@@ -55,11 +55,15 @@ Run this command to demonstrate a missing primary model falling back to the conf
 .venv/bin/python fallback_demo.py
 ```
 
-## Your job (in `gateway_app.py`)
-- `route()` — send the easy task to `EASY_MODEL`, the hard task to `HARD_MODEL`.
-- `call_model()` — fall back to `FALLBACK_MODEL` on error/timeout (guard against loops).
-- Measure latency + cost across 10 inputs per task and recommend a routing policy.
+## Tests
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+```
 
 ## Files
-- `gateway_app.py` — the skeleton (two tasks + routing TODOs)
-- `tests/test_gateway.py` — routing and fallback unit tests
+- `gateway_app.py` contains the routing and guarded fallback logic
+- `benchmark.py` records the 20 local measurements
+- `fallback_demo.py` records a live fallback result
+- `results/` stores the measured data and routing policy
+- `tests/test_gateway.py` tests routing and fallback behavior
