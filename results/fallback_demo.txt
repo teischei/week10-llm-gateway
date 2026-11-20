@@ -1,0 +1,1 @@
+Primary model ollama/model-that-does-not-exist failed. Fallback model ollama/llama3.1:8b responded Blue.

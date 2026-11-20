@@ -31,6 +31,30 @@ export HARD_MODEL=ollama/llama3.1:8b
 export FALLBACK_MODEL=ollama/llama3.1:8b
 ```
 
+## Measurement
+
+Run the 20 local requests and save their latency and cost results.
+
+```bash
+.venv/bin/python benchmark.py
+```
+
+The script writes one record for each request to `results/measurements.json` and a table to `results/summary.md`. Both routes use local Ollama models, so their actual provider cost is $0.
+
+If the hard route takes longer than your terminal command window, run one saved request at a time.
+
+```bash
+.venv/bin/python benchmark.py --task hard --index 0
+```
+
+## Fallback check
+
+Run this command to demonstrate a missing primary model falling back to the configured model.
+
+```bash
+.venv/bin/python fallback_demo.py
+```
+
 ## Your job (in `gateway_app.py`)
 - `route()` — send the easy task to `EASY_MODEL`, the hard task to `HARD_MODEL`.
 - `call_model()` — fall back to `FALLBACK_MODEL` on error/timeout (guard against loops).
