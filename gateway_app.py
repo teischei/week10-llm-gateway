@@ -12,33 +12,41 @@ Setup:
 Run:
     python gateway_app.py
 """
+import os
 import time
 
 import litellm
 
-# TODO: choose real model ids for your providers (see litellm docs for the prefixes).
-EASY_MODEL = "ollama/llama3.1:8b"      # cheap/fast
-HARD_MODEL = "gpt-4o-mini"             # stronger
-FALLBACK_MODEL = "ollama/llama3.1:8b"  # used if the primary errors
+EASY_MODEL = os.getenv("EASY_MODEL", "ollama/llama3.2:3b")
+HARD_MODEL = os.getenv("HARD_MODEL", "ollama/llama3.1:8b")
+FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", HARD_MODEL)
+MODEL_TIMEOUT_SECONDS = int(os.getenv("MODEL_TIMEOUT_SECONDS", "60"))
 
 
-def call_model(model: str, prompt: str) -> str:
+def call_model(model: str, prompt: str, used_fallback: bool = False) -> str:
     """Single choke point for all model calls — route, log, and fall back here."""
     try:
         resp = litellm.completion(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            timeout=60,
+            timeout=MODEL_TIMEOUT_SECONDS,
         )
         return resp["choices"][0]["message"]["content"].strip()
     except Exception as exc:  # noqa: BLE001
-        # TODO: on failure, fall back to FALLBACK_MODEL (guard against infinite loops).
-        raise
+        if used_fallback or model == FALLBACK_MODEL:
+            raise RuntimeError(f"Model call failed for {model}") from exc
+        print(f"[{model}] failed, trying fallback {FALLBACK_MODEL}")
+        return call_model(FALLBACK_MODEL, prompt, used_fallback=True)
 
 
 def route(task: str, prompt: str) -> str:
-    """TODO: pick EASY_MODEL for the easy task and HARD_MODEL for the hard task."""
-    model = EASY_MODEL  # TODO: change based on `task`
+    """Route each task to the model chosen for its difficulty."""
+    if task == "easy":
+        model = EASY_MODEL
+    elif task == "hard":
+        model = HARD_MODEL
+    else:
+        raise ValueError(f"Unknown task type {task}")
     started = time.time()
     out = call_model(model, prompt)
     print(f"[{task}] model={model} latency={time.time() - started:.2f}s")
